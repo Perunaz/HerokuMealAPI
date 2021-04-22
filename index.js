@@ -6,9 +6,12 @@ let port = process.env.PORT || 3000;
 
 app.get("/api", (req, res) => {
     res.send(importData1);
+    res.status(200).json(result);
 });
+
 app.get("/api/info", (req, res) => {
     res.send(importData2);
+    res.status(200).json(result);
 });
 
 app.listen(port, () => {
