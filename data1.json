@@ -1,6 +1,5 @@
 {
     "hello_world":{
-                     "response": "Hello World",
-                     "status_ok": "true"
+                     "response": "Hello World"
      }
 }
