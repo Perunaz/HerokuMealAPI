@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "start-dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 0"
+    "test": "mocha -reporter spec test/**/*.test.js --exit"
   },
   "repository": {
     "type": "git",
@@ -25,9 +25,13 @@
   },
   "homepage": "https://github.com/Perunaz/opdracht1programmeren4#readme",
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "tracer": "^1.1.4"
   },
   "devDependencies": {
+    "chai": "^4.3.4",
+    "chai-http": "^4.3.0",
+    "mocha": "^8.3.2",
     "nodemon": "^2.0.7"
   },
   "engines": {

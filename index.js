@@ -1,8 +1,8 @@
 const express = require("express");
-const database = require("./database");
+const database = require("./src/dao/database");
 
 const app = express();
-require('./route/api.routes.js')(app);
+require('./src/routes/api.apiroutes.js')(app);
 let port = process.env.PORT || 3000;
 
 app.listen(port, () => {
