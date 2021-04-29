@@ -5,7 +5,7 @@ let database = {
   info: "This is the database",
 
   add(home, callback) {
-      home.homeId = databaseMaxIndex++;
+      home.home_id = databaseMaxIndex++;
       this.db.push(home);
       // no error occurred
       callback(undefined, home);
@@ -17,9 +17,11 @@ let database = {
     }, timeToWait);
   },
 
-  getById(index) {
-    const hometoreturn = db.find((home) => home.homeid == index);
-    return hometoreturn;
+  getById(index, callback) {
+    console.log("database.getById called");
+    const hometoreturn = database.db.find((home) => home.home_id == index);
+    // no error occurred
+    callback(undefined, hometoreturn);
   },
 
   delete(index, callback) {
