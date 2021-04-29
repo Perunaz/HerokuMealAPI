@@ -9,8 +9,7 @@ module.exports = {
         databaseMaxIndex++;
         this.db.push(item);
         callback("success", undefined);
-      }
-    },
+      },
   
     // get() om één item uit de database te lezen.
     get(index, callback) {
@@ -21,7 +20,6 @@ module.exports = {
         } else {
           callback({ name: "item" }, undefined);
         }
-      };
-    },
-  };
+      }
+    }
   
