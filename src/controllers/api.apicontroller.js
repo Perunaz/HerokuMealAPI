@@ -1,6 +1,6 @@
 const importData1 = require("../json/data1.json");
 const importData2 = require("../json/data2.json");
-const apiRoutes = require("../route/api.routes");
+const apiRoutes = require("../routes/api.apiroutes");
 
 exports.getLoggingHandler = function(req, res, next) {
     console.log("Generic logging handler called.")

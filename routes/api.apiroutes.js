@@ -1,6 +1,6 @@
 module.exports = function(app){
 
-    const api = require("../controllers/api.controller.js");
+    const api = require("../src/controllers/api.apicontroller.js");
 
     app.all("*", api.getLoggingHandler);
 
