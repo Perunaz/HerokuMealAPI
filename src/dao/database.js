@@ -1,4 +1,4 @@
-const databaseMaxIndex = 0;
+let databaseMaxIndex = 0;
 
 let database = {
   db: [],
@@ -8,7 +8,7 @@ let database = {
       home.homeId = databaseMaxIndex++;
       this.db.push(home);
       // no error occurred
-      callback(undefined, item);
+      callback(undefined, home);
     },
 
   getAll(callback) {
@@ -39,7 +39,7 @@ const home = {
   phone_number: "0612345678"
 };
 
-database.add(movie, (err, result) => {
+database.add(home, (err, result) => {
   console.log("Added single item: ", result);
 });
 
