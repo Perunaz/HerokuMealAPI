@@ -1,3 +1,4 @@
+let logger = require('tracer').console();
 let databaseMaxIndex = 0;
 
 let database = {
@@ -12,15 +13,17 @@ let database = {
     },
 
   getAll(callback) {
-    setTimeout(() => {
       callback(undefined, database.db);
-    }, timeToWait);
   },
 
   getById(index, callback) {
-    console.log("database.getById called");
+    logger.log("database.getById called");
     const hometoreturn = database.db.find((home) => home.home_id == index);
     // no error occurred
+    if(!hometoreturn) {
+      const err = { message: "Id doesn't exist", errCode: 404 };
+      callback(err, undefined);
+    }
     callback(undefined, hometoreturn);
   },
 
@@ -37,12 +40,12 @@ const home = {
   street_name: "Rembrandtlaan",
   street_number: 28,
   postal_code: "1234AB",
-  town: "Breda",
+  city: "Breda",
   phone_number: "0612345678"
 };
 
 database.add(home, (err, result) => {
-  console.log("Added single item: ", result);
+  logger.log("Added single item: ", result);
 });
 
 module.exports = database;

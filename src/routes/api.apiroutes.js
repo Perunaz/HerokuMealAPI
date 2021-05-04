@@ -9,6 +9,4 @@ module.exports = function(app){
     app.get("/api/info", api.getApiInfo);
     
     app.all("*", api.getCatchAll);
-    
-    app.use("*", api.getErrorOccurred);
 }
