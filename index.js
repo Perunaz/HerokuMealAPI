@@ -10,7 +10,7 @@ let port = process.env.PORT || 3000;
 
 app.use((error, req, res, next) => {
     logger.log("Errorhandler called! ", error);
-    res.status(error.errCode).json( {
+    res.status(error.errCode).json({
         error: "some error occured",
         message: error.message,
     });
