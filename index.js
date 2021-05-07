@@ -6,6 +6,7 @@ const app = express();
 app.use(bodyParser.json());
 require('./src/routes/api.apiroutes.js')(app);
 require('./src/routes/api.homeroutes.js')(app);
+require('./src/routes/api.mealroutes.js')(app);
 let port = process.env.PORT || 3000;
 
 app.use((error, req, res, next) => {

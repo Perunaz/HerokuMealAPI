@@ -1,4 +1,3 @@
-const apiRoutes = require("../routes/api.homeroutes");
 const database = require("../dao/database");
 let logger = require('tracer').console();
 
@@ -27,10 +26,7 @@ exports.updateStudentHome = function(req, res, next) {
 
   database.updateHome(homeId, home, (err, result) => {
     if (err) {
-      next({
-        message: "HomeId " + homeId + " not found",
-        errCode: 404
-      });
+      next(err);
     }
     if (result) {
       res.status(200).json({
@@ -46,7 +42,6 @@ exports.addStudentHome = function (req, res, next) {
 
   database.add(home, (err, result) => {
     if (err) {
-      logger.log("Error adding home: " + home);
       next(err);
     }
     if (result) {
@@ -127,13 +122,10 @@ exports.deleteStudentHome = function(req, res, next) {
 
   database.deleteHome(homeId, (err, result) => {
     if (err) {
-      next({
-        message: "HomeId " + homeId + " not found",
-        errCode: 404
-      });
+      next(err);
     }
     if (result) {
-      res.status(200).json({status: "success deleting home: " + result})
+      res.status(200).json({status: "success deleting home: " + result});
     }
   });
 }
