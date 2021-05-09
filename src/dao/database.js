@@ -1,22 +1,26 @@
+const validators = require("../validators");
 let logger = require('tracer').console();
 let databaseHomesMaxIndex = 0;
 
 
 let database = {
-  dbHomes: [],
+  db: [],
   info: "This is the database",
 
   add(home, callback) {
     logger.log("add called");
 
-    this.validateHome(home, (err, result) => {
+    validators.validateHome(home, this.db, (err, result) => {
       if (err) {
         callback(err);
       }
       if (result) {
-        home.home_id = databaseHomesMaxIndex++;
         home.meals = [];
-        this.dbHomes.push(home);
+        this.db.push(home);
+        let i = 0, ln = database.db.length;
+        for (i;i<ln;i++){
+          database.db[i].home_id = i;
+        }
         callback(undefined, home);
       }
     });
@@ -24,7 +28,7 @@ let database = {
 
   addMeal(meal, index, callback) {
     logger.log("addMeal called");
-    let homeToUpdate = database.dbHomes.find((home) => home.home_id == index);
+    let homeToUpdate = database.db.find((home) => home.home_id == index);
 
     if (!homeToUpdate) {
       err = {
@@ -34,20 +38,26 @@ let database = {
       callback(err);
     }
 
-    this.validateMeal(meal, index, (err, result) => {
+    validators.validateMeal(meal, index, this.db, (err, result) => {
       if (err) {
         callback(err);
       }
       if (result) {
-        this.dbHomes[index]['meals'].push(meal);
+        homeToUpdate.meals.push(meal);
+        let i = 0, ln = homeToUpdate.meals.length;
+        for (i;i<ln;i++){
+          homeToUpdate.meals[i].meal_id = i;
+        }
+        database.db.splice(index, 1);
+        database.db.push(homeToUpdate);
         callback(undefined, meal);
       }
     });
   },
 
   getMeals(index, callback) {
-    const output = this.dbHomes.find((home) => home.home_id == index).meals;
-    logger.log(output);
+    logger.log("database.getMeals called");
+    const output = this.db.find((home) => home.home_id == index).meals;
 
     if (output.length <= 0) {
       callback({
@@ -59,125 +69,28 @@ let database = {
     }
   },
 
-  validateMeal(meal, index, next) {
-    logger.log("validateMeal called!");
-    if (meal) {
-      let name = meal["name"];
+  getMeal(homeId, mealId, callback) {
+    logger.log("database.getMeal called");
+    const mealsFromHome = this.db.find((home) => home.home_id == homeId).meals;
+    const mealToReturn = mealsFromHome[mealId];
 
-      if (
-        meal["name"] == null ||
-        meal["info"] == null
-      ) {
-        next({
-          message: "An element is missing!",
-          errCode: 400
-        });
-      } else if (this.checkIfMealAlreadyExists(name, index)) {
-        next({
-          message: "This meal already exists",
-          errCode: 400
-        });
-      } else {
-        next(undefined, meal);
-      }
-    } else {
-      next({
-        message: "The method did not succeed",
-        errCode: 400
+    if (mealToReturn.length <= 0) {
+      callback({
+        message: "No meal found!",
+        errCode: 404
       });
-    }
-  },
-
-  validateHome(home, next) {
-    logger.log("validateHome called!");
-    if (home) {
-      let postalCode = home["postal_code"];
-      let phoneNumber = home["phone_number"];
-      let street = home["street_name"];
-      let number = home["number"];
-
-      if (
-        home["name"] == null ||
-        home["street_name"] == null ||
-        home["number"] == null ||
-        home["postal_code"] == null ||
-        home["city"] == null ||
-        home["phone_number"] == null
-      ) {
-        next({
-          message: "An element is missing!",
-          errCode: 400
-        });
-      } else if (!this.validatePostalCode(postalCode)) {
-        next({
-          message: "Postal code is invalid",
-          errCode: 400
-        });
-      } else if (!this.validatePhoneNumber(phoneNumber)) {
-        next({
-          message: "Phonenumber is invalid",
-          errCode: 400
-        });
-      } else if (this.checkIfHomeAlreadyExists(street, number)) {
-        next({
-          message: "This studenthome already exists",
-          errCode: 400
-        });
-      } else {
-        next(undefined, home);
-      }
     } else {
-      next({
-        message: "The method did not succeed",
-        errCode: 400
-      });
-    }
-  },
-
-  validatePostalCode(value) {
-    logger.log("validatePostalCode called!");
-    return /^[1-9][0-9]{3}[ ]?([A-RT-Za-rt-z][A-Za-z]|[sS][BCbcE-Re-rT-Zt-z])$/.test(
-      value
-    );
-  },
-
-  validatePhoneNumber(value) {
-    logger.log("validatePhoneNumber called!");
-    return /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im.test(
-      value
-    );
-  },
-
-  checkIfHomeAlreadyExists(street, number) {
-    logger.log("checkIfHomeAlreadyExists called!");
-    var isInArray =
-      this.dbHomes.find(function (x) {
-        return x.street_name === street && x.number === number;
-      }) !== undefined;
-    return isInArray;
-  },
-
-  checkIfMealAlreadyExists(name, index) {
-    logger.log("checkIfMealAlreadyExists called!");
-
-    let homeToUpdate = database.dbHomes.find((home) => home.home_id == index);
-    let meals = homeToUpdate.meals;
-    let mealToReturn = meals.find((meal) => meal.name == name);
-
-    if (!mealToReturn) {
-      return false;
-    } else {
-      return true;
+      callback(undefined, mealToReturn);
     }
   },
 
   getAll(callback) {
-    callback(undefined, database.dbHomes);
+    callback(undefined, database.db);
   },
 
   getById(index, callback) {
     logger.log("database.getById called");
-    const homeToReturn = database.dbHomes.find((home) => home.home_id == index);
+    const homeToReturn = database.db.find((home) => home.home_id == index);
 
     if (!homeToReturn) {
       const err = {
@@ -191,7 +104,7 @@ let database = {
 
   updateHome(index, home, callback) {
     logger.log("database.updateHome called");
-    let homeToUpdate = database.dbHomes.find((home) => home.home_id == index);
+    let homeToUpdate = database.db.find((home) => home.home_id == index);
 
     if (!homeToUpdate) {
       err = {
@@ -200,7 +113,7 @@ let database = {
       }
       callback(err);
     }
-    this.validateHome(home, (err, result) => {
+    validators.validateHome(home, this.db, (err, result) => {
       if (err) {
         callback(err);
       }
@@ -214,14 +127,14 @@ let database = {
     });
 
     home.home_id = parseInt(index);
-    this.dbHomes.push(home);
-    homeToUpdate = database.dbHomes.find((home) => home.home_id == index);
+    this.db.push(home);
+    homeToUpdate = database.db.find((home) => home.home_id == index);
     callback(undefined, homeToUpdate);
   },
 
   deleteHome(index, callback) {
     logger.log("database.deleteHome called");
-    const homeToDelete = database.dbHomes.find((home) => home.home_id == index);
+    const homeToDelete = database.db.find((home) => home.home_id == index);
 
     if (!homeToDelete) {
       const err = {
@@ -230,8 +143,63 @@ let database = {
       };
       callback(err);
     } else {
-      database.dbHomes.splice(index, 1);
-      callback(undefined, index);
+      database.db.splice(index, 1);
+      let i = 0, ln = database.db.length;
+        for (i;i<ln;i++){
+          database.db[i].home_id = i;
+        }
+      callback(undefined, "deleted");
+    }
+  },
+
+  updateMeal(meal, homeId, mealId, callback) {
+    logger.log("database.updateMeal called");
+    const homeToUpdateMealFrom = database.db.find((home) => home.home_id == homeId);
+
+    if (!homeToUpdateMealFrom) {
+      err = {
+        message: "HomeId " + home.homeId + " not found",
+        errCode: 404
+      }
+      callback(err);
+    }
+    validators.validateMeal(meal, homeId, this.db, (err, result) => {
+      if (err) {
+        callback(err);
+      }
+      if (result) {
+        homeToUpdateMealFrom.meals.splice(mealId, 1);
+        meal.meal_id = parseInt(mealId);
+        homeToUpdateMealFrom.meals.push(meal);
+        database.db.splice(homeId, 1);
+        database.db.push(homeToUpdateMealFrom);
+      }
+    });
+    const mealToUpdate = homeToUpdateMealFrom.meals.find((meal) => meal.meal_id == mealId);
+    callback(undefined, mealToUpdate);
+  },
+
+  deleteMeal(homeId, mealId, callback) {
+    logger.log("database.deleteMeal called");
+    const homeToDeleteMealFrom = database.db.find((home) => home.home_id == homeId);
+    const mealToDelete = homeToDeleteMealFrom.meals.find((meal) => meal.meal_id == mealId);
+
+    if (!homeToDeleteMealFrom || !mealToDelete) {
+      const err = {
+        message: "Id doesn't exist",
+        errCode: 404
+      };
+      callback(err);
+    } else {
+      homeToDeleteMealFrom.meals.splice(mealId, 1);
+        let i = 0, ln = homeToDeleteMealFrom.meals.length;
+        for (i;i<ln;i++){
+          homeToDeleteMealFrom.meals[i].meal_id = i;
+        }
+        database.db.splice(homeId, 1);
+        database.db.push(homeToDeleteMealFrom);
+
+      callback(undefined, "deleted");
     }
   },
 };
