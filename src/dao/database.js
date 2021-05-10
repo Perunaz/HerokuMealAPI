@@ -108,7 +108,7 @@ let database = {
 
     if (!homeToUpdate) {
       err = {
-        message: "HomeId " + home.homeId + " not found",
+        message: "HomeId " + index + " not found",
         errCode: 404
       }
       callback(err);
@@ -137,10 +137,10 @@ let database = {
     const homeToDelete = database.db.find((home) => home.home_id == index);
 
     if (!homeToDelete) {
-      const err = {
-        message: "Id doesn't exist",
+      err = {
+        message: "HomeId " + index + " not found",
         errCode: 404
-      };
+      }
       callback(err);
     } else {
       database.db.splice(index, 1);

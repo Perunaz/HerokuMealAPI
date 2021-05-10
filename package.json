@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "start-dev": "nodemon index.js",
-    "test": "mocha -reporter spec test/**/*.test.js --exit"
+    "test": "mocha --inline-diffs -reporter spec test/**/*.test.js --exit"
   },
   "repository": {
     "type": "git",

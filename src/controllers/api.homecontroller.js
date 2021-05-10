@@ -2,7 +2,7 @@ const database = require("../dao/database");
 let logger = require('tracer').console();
 
 exports.getById = function (req, res, next) {
-  logger.log("Get student home by Id called");
+  logger.log("getById called");
   const homeId = req.params.homeId;
 
   database.getById(homeId, (err, result) => {
@@ -14,7 +14,8 @@ exports.getById = function (req, res, next) {
     }
     if (result) {
       res.status(200).json({
-        result: result,
+        status: "success",
+        result: result
       });
     }
   });
@@ -30,6 +31,7 @@ exports.updateStudentHome = function(req, res, next) {
     }
     if (result) {
       res.status(200).json({
+        status: "success",
         result: result,
       });
     }
@@ -61,8 +63,6 @@ exports.getStudentHomesByNameAndCity = function (req, res, next) {
   const {
     city
   } = req.query;
-
-  console.log(name + " " + city);
 
   var filter1;
   var filter2;
@@ -100,10 +100,12 @@ exports.getStudentHomesByNameAndCity = function (req, res, next) {
     }
 
     if (filter2 != null) {
-      res.status(200).json(filter2);
+      res.status(200).json({status: "success", 
+                            result: filter2});
     } else {
       if (filter1 != null) {
-        res.status(200).json(filter1);
+        res.status(200).json({status: "success", 
+                              result: filter1});
       } else {
         next({
           message: "Not found",
@@ -112,7 +114,8 @@ exports.getStudentHomesByNameAndCity = function (req, res, next) {
       }
     }
   } else {
-    res.status(200).json(database.db);
+    res.status(200).json({status: "success", 
+                          result: database.db});
   }
 };
 
@@ -125,7 +128,8 @@ exports.deleteStudentHome = function(req, res, next) {
       next(err);
     }
     if (result) {
-      res.status(200).json({status: "success deleting home: " + result});
+      res.status(200).json({status: "success",
+                            result: result});
     }
   });
 }
