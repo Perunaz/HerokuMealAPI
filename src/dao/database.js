@@ -74,9 +74,9 @@ let database = {
     const mealsFromHome = this.db.find((home) => home.home_id == homeId).meals;
     const mealToReturn = mealsFromHome[mealId];
 
-    if (mealToReturn.length <= 0) {
+    if (!mealToReturn) {
       callback({
-        message: "No meal found!",
+        message: "mealId " + mealId + " not found!",
         errCode: 404
       });
     } else {
@@ -126,6 +126,7 @@ let database = {
       }
     });
 
+    home.meals = [];
     home.home_id = parseInt(index);
     this.db.push(home);
     homeToUpdate = database.db.find((home) => home.home_id == index);
@@ -155,10 +156,18 @@ let database = {
   updateMeal(meal, homeId, mealId, callback) {
     logger.log("database.updateMeal called");
     const homeToUpdateMealFrom = database.db.find((home) => home.home_id == homeId);
+    let mealToUpdate = homeToUpdateMealFrom.meals.find((meal) => meal.meal_id == mealId);
 
     if (!homeToUpdateMealFrom) {
       err = {
-        message: "HomeId " + home.homeId + " not found",
+        message: "HomeId " + homeId + " not found",
+        errCode: 404
+      }
+      callback(err);
+    }
+    if (!mealToUpdate) {
+      err = {
+        message: "mealId " + mealId + " not found!",
         errCode: 404
       }
       callback(err);
@@ -175,7 +184,7 @@ let database = {
         database.db.push(homeToUpdateMealFrom);
       }
     });
-    const mealToUpdate = homeToUpdateMealFrom.meals.find((meal) => meal.meal_id == mealId);
+    mealToUpdate = homeToUpdateMealFrom.meals.find((meal) => meal.meal_id == mealId);
     callback(undefined, mealToUpdate);
   },
 
@@ -186,7 +195,7 @@ let database = {
 
     if (!homeToDeleteMealFrom || !mealToDelete) {
       const err = {
-        message: "Id doesn't exist",
+        message: "mealId " + mealId + " not found!",
         errCode: 404
       };
       callback(err);

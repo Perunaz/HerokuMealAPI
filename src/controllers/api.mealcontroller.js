@@ -29,6 +29,7 @@ exports.addMeal = function (req, res, next) {
       }
       if (result) {
         res.status(200).json({
+          status: "success",
           result: result
         });
       }
@@ -46,6 +47,7 @@ exports.addMeal = function (req, res, next) {
       }
       if (result) {
         res.status(200).json({
+          status: "success",
           result: result
         });
       }
@@ -64,6 +66,7 @@ exports.addMeal = function (req, res, next) {
       }
       if (result) {
         res.status(200).json({
+          status: "success",
           result: result
         });
       }
