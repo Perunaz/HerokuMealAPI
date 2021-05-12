@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "start-dev": "nodemon index.js",
-    "test": "mocha --inline-diffs -reporter spec test/**/*.test.js --exit"
+    "test": "mocha --inline-diffs -reporter spec test/**/*.test.js --exit",
+    "coverage" :  "nyc --reporter=lcov npm run test" ,
+    "sonar" :  "sonar-scanner"
   },
   "repository": {
     "type": "git",
@@ -27,13 +29,16 @@
   "dependencies": {
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
+    "husky": "^6.0.0",
     "tracer": "^1.1.4"
   },
   "devDependencies": {
     "chai": "^4.3.4",
     "chai-http": "^4.3.0",
     "mocha": "^8.3.2",
-    "nodemon": "^2.0.7"
+    "nodemon": "^2.0.7",
+    "nyc": "^15.1.0",
+    "sonarqube-scanner": "^2.8.0"
   },
   "engines": {
     "node": "v14.16.1"
