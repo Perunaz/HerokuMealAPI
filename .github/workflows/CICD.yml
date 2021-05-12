@@ -36,3 +36,6 @@ jobs:
           heroku_api_key: ${{secrets.HEROKU_API_KEY}}
           heroku_app_name: ${{secrets.HEROKU_APP_NAME}} 
           heroku_email: ${{secrets.STUDENT_EMAIL}}
+          sonar.login: ${{secrets.SONAR_LOGIN_KEY}}
+          sonar.projectKey: ${{secrets.SONAR_PROJECT_KEY}}
+          sonar.projectName: ${{secrets.SONAR_PROJECT_KEY}}
