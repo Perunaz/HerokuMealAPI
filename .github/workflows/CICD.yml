@@ -20,15 +20,22 @@ jobs:
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
-          node-version: ${{ matrix.node-version }}
-          sonar.login: ${{secrets.SONAR_LOGIN_KEY}}
-          sonar.projectKey: ${{secrets.SONAR_PROJECT_KEY}}
-          sonar.projectName: ${{secrets.SONAR_PROJECT_KEY}}
+          node-version: ${{ matrix.node-version }}  
       - run: npm ci
       - run: npm run build --if-present
-      - run: npm test
-      - run: npm run sonar
-
+      - run: npm test 
+  sonarQubeTrigger:
+  
+    name: SonarQube Trigger
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: SonarQube Scan
+      uses: sijomc/sonarscan-action@master
+      with:
+        host: ${{secrets.SONAR_URL}}
+        login: ${{secrets.SONAR_LOGIN_KEY}}
+      
   release:
     needs: build
     runs-on: ubuntu-latest
