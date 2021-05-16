@@ -64,59 +64,15 @@ exports.getStudentHomesByNameAndCity = function (req, res, next) {
     city
   } = req.query;
 
-  var filter1;
-  var filter2;
-
-  if (name || city) {
-    if (name) {
-      filter1 = database.db.filter((filter1) => filter1.name.startsWith(name))
-      if (filter1.length == 0) {
-        next({
-          message: "Name not found",
-          errCode: 404
-        });
-      }
+  database.getByNameAndCity(name, city, (err, result) => {
+    if (err) {
+      next(err);
     }
-
-    if (city) {
-
-      if (filter1 != null) {
-        filter2 = filter1.filter((filter2) => filter2.city == city);
-        if (filter2.length == 0) {
-          next({
-            message: "City not found",
-            errCode: 404
-          });
-        }
-      } else {
-        filter2 = database.db.filter((filter2) => filter2.city == city);
-        if (filter2.length == 0) {
-          next({
-            message: "City not found",
-            errCode: 404
-          });
-        }
-      }
+    if (result) {
+      res.status(200).json({status: "success",
+                            result: result});
     }
-
-    if (filter2 != null) {
-      res.status(200).json({status: "success", 
-                            result: filter2});
-    } else {
-      if (filter1 != null) {
-        res.status(200).json({status: "success", 
-                              result: filter1});
-      } else {
-        next({
-          message: "Not found",
-          errCode: 404
-        });
-      }
-    }
-  } else {
-    res.status(200).json({status: "success", 
-                          result: database.db});
-  }
+  });
 };
 
 exports.deleteStudentHome = function(req, res, next) {

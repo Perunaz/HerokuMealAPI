@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const pool = require('./src/dao/database.js')
 let logger = require('tracer').console();
 
 const app = express();
@@ -20,5 +21,12 @@ app.use((error, req, res, next) => {
 app.listen(port, () => {
     logger.log(`Server running at http://localhost:${port}/`)
 });
+
+function gracefulShutdown() {
+    logger.info('Server shutting down')
+    pool.end(function (err) {
+      logger.info('Database pool connections closed')
+    })
+  }  
 
 module.exports = app;

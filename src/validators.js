@@ -1,5 +1,20 @@
-const database = require("./dao/database");
-let logger = require('tracer').console();
+const mysql = require('mysql');
+const logger = require('./config/config').logger;
+const dbconfig = require('./config/config').dbconfig;
+
+const pool = mysql.createPool(dbconfig);
+
+pool.on('connection', function (connection) {
+  logger.trace('Database connection established')
+})
+
+pool.on('acquire', function (connection) {
+  logger.trace('Database connection aquired')
+})
+
+pool.on('release', function (connection) {
+  logger.trace('Database connection released')
+})
 
 let validators = {
     validateMeal(meal, index, db, next) {
@@ -31,21 +46,21 @@ let validators = {
         }
       },
     
-      validateHome(home, db, next) {
+      validateHome(home, next) {
         logger.log("validateHome called!");
         if (home) {
-          let postalCode = home["postal_code"];
-          let phoneNumber = home["phone_number"];
-          let street = home["street_name"];
-          let number = home["number"];
+          let postalCode = home["Postal_Code"];
+          let phoneNumber = home["Telephone"];
+          let street = home["Address"];
+          let number = home["House_Nr"];
     
           if (
-            home["name"] == null ||
-            home["street_name"] == null ||
-            home["number"] == null ||
-            home["postal_code"] == null ||
-            home["city"] == null ||
-            home["phone_number"] == null
+            home["Name"] == null ||
+            home["Address"] == null ||
+            home["House_Nr"] == null ||
+            home["Postal_Code"] == null ||
+            home["City"] == null ||
+            home["Telephone"] == null
           ) {
             next({
               message: "An element is missing!",
@@ -61,7 +76,7 @@ let validators = {
               message: "Phonenumber is invalid",
               errCode: 400
             });
-          } else if (this.checkIfHomeAlreadyExists(street, number, db)) {
+          } else if (this.checkIfHomeAlreadyExists(street, number)) {
             next({
               message: "This studenthome already exists",
               errCode: 400
@@ -91,13 +106,35 @@ let validators = {
         );
       },
     
-      checkIfHomeAlreadyExists(street, number, db) {
+      checkIfHomeAlreadyExists(street, number) {
         logger.log("checkIfHomeAlreadyExists called!");
-        var isInArray =
-          db.find(function (x) {
-            return x.street_name === street && x.number === number;
-          }) !== undefined;
-        return isInArray;
+        
+        pool.getConnection(function (err, connection) {
+          if (err) {
+            res.status(400).json({
+              message: "GetById failed!",
+              error: err,
+            });
+          }
+       
+          // Use the connection
+          connection.query("SELECT * FROM studenthome WHERE Address = " + street + " AND House_Nr = " + number, (error, results, fields) => {
+            // When done with the connection, release it.
+            connection.release();
+            // Handle error after the release.
+            if (error) {
+              next({
+                message: error.toString(),
+                errCode: 404,
+              });
+            }
+            if (results.length > 0) {
+              return false;
+            } else {
+              return true;
+            }
+          });
+        });
       },
     
       checkIfMealAlreadyExists(name, index, db) {
