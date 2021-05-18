@@ -18,7 +18,6 @@ pool.on('release', function (connection) {
 })
 
 let database = {
-  db: [],
 
   add(home, next) {
     logger.trace("add called");
@@ -27,18 +26,72 @@ let database = {
       if (err) {
         next(err);
       }
-    });
+      if (result) {
+        pool.getConnection(function (err, connection) {
+          if (err) {
+            next(err);
+          }
 
-    pool.getConnection(function (err, connection) {
-      if (err) {
-        res.status(400).json({
-          message: "Add failed!",
-          error: err,
+          // Use the connection
+          connection.query("INSERT INTO studenthome (Name, Address, House_Nr, UserID, Postal_Code, Telephone, City) VALUES (\"" + home.Name + "\", \"" + home.Address + "\", " + home.House_Nr + ", " + home.UserID + ", \"" + home.Postal_Code + "\", " + home.Telephone + ", \"" + home.City + "\")", (error, results, fields) => {
+            // When done with the connection, release it.
+            connection.release();
+            // Handle error after the release.
+            if (error) {
+              next({
+                message: error.toString(),
+                errCode: 404,
+              });
+            } else {
+              next(undefined, results);
+            }
+          });
         });
       }
-   
+    });
+  },
+
+  addMeal(meal, index, next) {
+    logger.trace("addMeal called");
+
+    validators.validateMeal(meal, index, (err, result) => {
+      if (err) {
+        next(err);
+        return;
+      }
+      if (result) {
+        pool.getConnection(function (err, connection) {
+          if (err) {
+            next(err);
+          }
+
+          // Use the connection
+          connection.query("INSERT INTO meal (Name, Description, Ingredients, Allergies, CreatedOn, OfferedOn, Price, UserID, StudenthomeID, MaxParticipants) VALUES (\"" + meal.Name + "\", \"" + meal.Description + "\", \"" + meal.Ingredients + "\", \"" + meal.Allergies + "\", \"" + new Date() + "\", \"" + meal.OfferedOn + "\", " + meal.Price + ", " + 4 + ", " + index + ", " + meal.MaxParticipants + ")", (error, results, fields) => {
+            // When done with the connection, release it.
+            connection.release();
+            // Handle error after the release.
+            if (error) {
+              next({
+                message: error.toString(),
+                errCode: 404,
+              });
+            } else {
+              next(undefined, results);
+            }
+          });
+        });
+      }
+    });
+  },
+
+  getMeals(index, next) {
+    logger.trace("database.getMeals called");
+    pool.getConnection(function (err, connection) {
+      if (err) {
+        next(err);
+      }
       // Use the connection
-      connection.query("INSERT INTO studenthome (Name, Address, House_Nr, UserID, Postal_Code, Telephone, City) VALUES (\""  + home.Name + "\", \"" + home.Address + "\", " + home.House_Nr + ", " + home.UserID + ", \"" + home.Postal_Code + "\", " + home.Telephone + ", \"" + home.City + "\")", (error, results, fields) => {
+      connection.query("SELECT * FROM meal WHERE StudenthomeID = " + index, (error, results, fields) => {
         // When done with the connection, release it.
         connection.release();
         // Handle error after the release.
@@ -47,79 +100,53 @@ let database = {
             message: error.toString(),
             errCode: 404,
           });
-        }else {
+        }
+        if (results.length > 0) {
           next(undefined, results);
+        } else {
+          next({
+            message: "Home doesn't have meals",
+            errCode: 404,
+          });
         }
       });
     });
   },
 
-  addMeal(meal, index, callback) {
-    logger.log("addMeal called");
-    let homeToUpdate = database.db.find((home) => home.home_id == index);
-
-    if (!homeToUpdate) {
-      err = {
-        message: "HomeId " + home.homeId + " not found",
-        errCode: 404
-      }
-      callback(err);
-    }
-
-    validators.validateMeal(meal, index, this.db, (err, result) => {
+  getMeal(homeId, mealId, next) {
+    pool.getConnection(function (err, connection) {
       if (err) {
-        callback(err);
+        next(err);
       }
-      if (result) {
-        homeToUpdate.meals.push(meal);
-        let i = 0, ln = homeToUpdate.meals.length;
-        for (i;i<ln;i++){
-          homeToUpdate.meals[i].meal_id = i;
+
+      // Use the connection
+      connection.query("SELECT * FROM meal WHERE ID = " + mealId + " AND StudenthomeID = " + homeId, (error, results, fields) => {
+        // When done with the connection, release it.
+        connection.release();
+        // Handle error after the release.
+        if (error) {
+          next({
+            message: error.toString(),
+            errCode: 404,
+          });
         }
-        database.db.splice(index, 1);
-        database.db.push(homeToUpdate);
-        callback(undefined, meal);
-      }
+        if (results.length > 0) {
+          next(undefined, results);
+        } else {
+          next({
+            message: "Meal doesn't exist",
+            errCode: 404,
+          });
+        }
+      });
     });
-  },
-
-  getMeals(index, callback) {
-    logger.log("database.getMeals called");
-    const output = this.db.find((home) => home.home_id == index).meals;
-
-    if (output.length <= 0) {
-      callback({
-        message: "No meal(s) found!",
-        errCode: 404
-      });
-    } else {
-      callback(undefined, output);
-    }
-  },
-
-  getMeal(homeId, mealId, callback) {
-    logger.log("database.getMeal called");
-    const mealsFromHome = this.db.find((home) => home.home_id == homeId).meals;
-    const mealToReturn = mealsFromHome[mealId];
-
-    if (!mealToReturn) {
-      callback({
-        message: "mealId " + mealId + " not found!",
-        errCode: 404
-      });
-    } else {
-      callback(undefined, mealToReturn);
-    }
   },
 
   getByNameAndCity(name, city, next) {
     logger.trace("database.getByNameAndCity called");
     pool.getConnection(function (err, connection) {
       if (err) {
-        res.status(400).json({
-          message: "getByNameAndCity failed!",
-          error: err,
-        });
+        next(err);
       }
 
       let sqlQuery = "SELECT * FROM studenthome";
@@ -131,8 +158,6 @@ let database = {
       } else if (city) {
         sqlQuery = "SELECT * FROM studenthome WHERE City = \"" + city + "\"";
       }
-   
-      logger.trace(sqlQuery);
       // Use the connection
       connection.query(sqlQuery, (error, results, fields) => {
         // When done with the connection, release it.
@@ -159,12 +184,9 @@ let database = {
   getById(index, next) {
     pool.getConnection(function (err, connection) {
       if (err) {
-        res.status(400).json({
-          message: "GetById failed!",
-          error: err,
-        });
+        next(err);
       }
-   
+
       // Use the connection
       connection.query("SELECT * FROM studenthome WHERE ID = " + index, (error, results, fields) => {
         // When done with the connection, release it.
@@ -193,10 +215,7 @@ let database = {
 
     pool.getConnection(function (err, connection) {
       if (err) {
-        res.status(400).json({
-          message: "updateHome failed!",
-          error: err,
-        });
+        next(err);
       }
 
       let sqlQueryBase = "UPDATE studenthome SET ";
@@ -206,6 +225,14 @@ let database = {
       let postalCode = "";
       let telephone = "";
       let city = "";
+
+      if(!home.Name && !home.Address && !home.House_Nr && !home.Postal_Code && !home.Telephone && !home.City) {
+        next({
+          message: "An element is missing!",
+          errCode: 400,
+        });
+        return;
+      }
 
       if (home.Name) {
         name = "Name = \"" + home.Name + "\", ";
@@ -243,7 +270,7 @@ let database = {
       let sqlQueryBase2 = sqlQueryBase.concat(name, address, homeNr, postalCode, telephone, city);
       sqlQueryBase2 = sqlQueryBase2.replace(/,\s*$/, "");
       let sqlQuery = sqlQueryBase2.concat(" WHERE ID = " + index);
-   
+
       // Use the connection
       connection.query(sqlQuery, (error, results, fields) => {
         // When done with the connection, release it.
@@ -254,14 +281,12 @@ let database = {
             message: error.toString(),
             errCode: 404,
           });
-        }
-        else if (results.affectedRows == 0) {
+        } else if (results.affectedRows == 0) {
           next({
             message: "Home doesn't exist",
             errCode: 404,
           });
-        }
-        else {
+        } else {
           next(undefined, results);
         }
       });
@@ -270,15 +295,12 @@ let database = {
 
   deleteHome(index, next) {
     logger.trace("database.deleteHome called");
-    
+
     pool.getConnection(function (err, connection) {
       if (err) {
-        res.status(400).json({
-          message: "deleteHome failed!",
-          error: err,
-        });
+        next(err);
       }
-   
+
       // Use the connection
       connection.query("DELETE FROM studenthome WHERE ID = " + index, (error, results, fields) => {
         // When done with the connection, release it.
@@ -290,76 +312,121 @@ let database = {
             errCode: 404,
           });
         }
-        else if (results.affectedRows == 0) {
+        if (results.affectedRows > 0) {
+          next(undefined, results);
+        } else {
           next({
             message: "Home doesn't exist",
             errCode: 404,
           });
         }
-        else {
+      });
+    });
+  },
+
+  updateMeal(meal, homeId, mealId, next) {
+    logger.trace("database.updateMeal called");
+
+    let sqlQueryBase = "UPDATE meal SET ";
+    let name = "";
+    let description = "";
+    let ingredients = "";
+    let allergies = "";
+    let offeredOn = "";
+    let price = "";
+    let maxParticipants = "";
+
+    if(!meal.Name && !meal.Description && !meal.Ingredients && !meal.Allergies && !meal.OfferedOn && !meal.Price && !meal.MaxParticipants) {
+      next({
+        message: "An element is missing!",
+        errCode: 400,
+      });
+      return;
+    }
+
+    if (meal.Name) {
+      name = "Name = \"" + meal.Name + "\", ";
+    }
+    if (meal.Description) {
+      description = "Description = \"" + meal.Description + "\", ";
+    }
+    if (meal.Ingredients) {
+      ingredients = "Ingredients = \"" + meal.Ingredients + "\", ";
+    }
+    if (meal.Allergies) {
+      allergies = "Allergies = \"" + meal.Allergies + "\", ";
+    }
+    if (meal.OfferedOn) {
+      offeredOn = "OfferedOn = \"" + meal.OfferedOn + "\", ";
+    }
+    if (meal.Price) {
+      price = "Price = \"" + meal.Price + "\", ";
+    }
+    if (meal.MaxParticipants) {
+      maxParticipants = "MaxParticipants = \"" + meal.MaxParticipants + "\" ";
+    }
+
+    let sqlQueryBase2 = sqlQueryBase.concat(name, description, ingredients, allergies, offeredOn, price, maxParticipants);
+    sqlQueryBase2 = sqlQueryBase2.replace(/,\s*$/, "");
+    let sqlQuery = sqlQueryBase2.concat(" WHERE ID = " + mealId + " AND StudenthomeID = " + homeId);
+
+    pool.getConnection(function (err, connection) {
+      if (err) {
+        next(err);
+      }
+
+      // Use the connection
+      connection.query(sqlQuery, (error, results, fields) => {
+        // When done with the connection, release it.
+        connection.release();
+        // Handle error after the release.
+        if (error) {
+          next({
+            message: error.toString(),
+            errCode: 404,
+          });
+        }
+        if (results.affectedRows > 0) {
           next(undefined, results);
+        } else {
+          next({
+            message: "Meal doesn't exist",
+            errCode: 404,
+          });
         }
       });
     });
   },
 
-  updateMeal(meal, homeId, mealId, callback) {
-    logger.log("database.updateMeal called");
-    const homeToUpdateMealFrom = database.db.find((home) => home.home_id == homeId);
-    let mealToUpdate = homeToUpdateMealFrom.meals.find((meal) => meal.meal_id == mealId);
+  deleteMeal(homeId, mealId, next) {
+    logger.trace("database.deleteMeal called");
 
-    if (!homeToUpdateMealFrom) {
-      err = {
-        message: "HomeId " + homeId + " not found",
-        errCode: 404
-      }
-      callback(err);
-    }
-    if (!mealToUpdate) {
-      err = {
-        message: "mealId " + mealId + " not found!",
-        errCode: 404
-      }
-      callback(err);
-    }
-    validators.validateMeal(meal, homeId, this.db, (err, result) => {
+    pool.getConnection(function (err, connection) {
       if (err) {
-        callback(err);
+        next(err);
       }
-      if (result) {
-        homeToUpdateMealFrom.meals.splice(mealId, 1);
-        meal.meal_id = parseInt(mealId);
-        homeToUpdateMealFrom.meals.push(meal);
-        database.db.splice(homeId, 1);
-        database.db.push(homeToUpdateMealFrom);
-      }
-    });
-    mealToUpdate = homeToUpdateMealFrom.meals.find((meal) => meal.meal_id == mealId);
-    callback(undefined, mealToUpdate);
-  },
 
-  deleteMeal(homeId, mealId, callback) {
-    logger.log("database.deleteMeal called");
-    const homeToDeleteMealFrom = database.db.find((home) => home.home_id == homeId);
-    const mealToDelete = homeToDeleteMealFrom.meals.find((meal) => meal.meal_id == mealId);
-
-    if (!homeToDeleteMealFrom || !mealToDelete) {
-      const err = {
-        message: "mealId " + mealId + " not found!",
-        errCode: 404
-      };
-      callback(err);
-    } else {
-      homeToDeleteMealFrom.meals.splice(mealId, 1);
-        let i = 0, ln = homeToDeleteMealFrom.meals.length;
-        for (i;i<ln;i++){
-          homeToDeleteMealFrom.meals[i].meal_id = i;
+      // Use the connection
+      connection.query("DELETE FROM meal WHERE ID = " + mealId + " AND StudenthomeID = " + homeId, (error, results, fields) => {
+        // When done with the connection, release it.
+        connection.release();
+        // Handle error after the release.
+        if (error) {
+          next({
+            message: error.toString(),
+            errCode: 404,
+          });
         }
-        database.db.splice(homeId, 1);
-        database.db.push(homeToDeleteMealFrom);
-
-      callback(undefined, "deleted");
-    }
+        if (results.affectedRows > 0) {
+          next(undefined, results);
+        } else {
+          next({
+            message: "Meal doesn't exist",
+            errCode: 404,
+          });
+        }
+      });
+    });
   },
 };
 
