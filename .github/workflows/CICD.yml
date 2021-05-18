@@ -22,8 +22,18 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}  
       - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test 
+      - run: npm run build --if-present  
+  test:
+  
+    name: Test environment for MySQL
+    runs-on: ubuntu-latest
+    steps:
+    - uses: jordiprats/mysql-action@1.1
+      with:
+        DB_USER: root
+        DB_DATABASE: ${{secrets.MYSQL_DATABASE}}
+        DB_PASSWORD: ${{secrets.MYSQL_ROOT_PASSWORD}}
+        DB_HOST: mysql 
   sonarQubeTrigger:
   
     name: SonarQube Trigger
