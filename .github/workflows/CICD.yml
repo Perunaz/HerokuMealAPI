@@ -35,7 +35,7 @@ jobs:
         DATABASE_NAME: 'studenthome'
         DATABASE_USERNAME: ${{secrets.MYSQL_USERNAME}}
         DATABASE_PASSWORD: ${{secrets.MYSQL_ROOT_PASSWORD}}
-        DATABASE_SCRIPT: 'studenthome.sql'
+        DATABASE_SCRIPT: '../studenthome.sql'
     - run: npm test
 
   sonarQubeTrigger:
