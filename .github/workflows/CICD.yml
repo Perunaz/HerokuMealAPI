@@ -28,10 +28,14 @@ jobs:
     name: Test environment for MySQL
     runs-on: ubuntu-latest
     steps:
-    - uses: jordiprats/mysql-action@1.1
+    - uses: gtadam/mysql-deploy-action@v1
       with:
-        mysql version: '8.0'
-        mysql root password: ${{secrets.MYSQL_ROOT_PASSWORD}}
+        DATABASE_HOST: ${{secrets.MYSQL_HOST}}
+        DATABASE_PORT: '3306'
+        DATABASE_NAME: 'studenthome'
+        DATABASE_USERNAME: ${{secrets.MYSQL_USERNAME}}
+        DATABASE_PASSWORD: ${{secrets.MYSQL_ROOT_PASSWORD}}
+        DATABASE_SCRIPT: 'studenthome.sql'
     - run: npm test
 
   sonarQubeTrigger:
