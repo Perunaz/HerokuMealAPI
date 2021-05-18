@@ -33,7 +33,9 @@ jobs:
         DB_USER: root
         DB_DATABASE: ${{secrets.MYSQL_DATABASE}}
         DB_PASSWORD: ${{secrets.MYSQL_ROOT_PASSWORD}}
-        DB_HOST: mysql 
+        DB_HOST: mysql
+    - run: npm test
+
   sonarQubeTrigger:
   
     name: SonarQube Trigger
