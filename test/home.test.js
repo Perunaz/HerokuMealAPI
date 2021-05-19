@@ -1,3 +1,6 @@
+process.env.DB_DATABASE = process.env.DB_DATABASE || "studenthome_testdb";
+process.env.NODE_ENV = "testing";
+process.env.LOGLEVEL = "error";
 const chai = require("chai");
 const chaiHttp = require("chai-http");
 chai.should();
