@@ -8,49 +8,48 @@ chai.use(chaiHttp);
 
 const assert = require("assert");
 const server = require("../index.js");
-const mysql = require('mysql');
 const logger = require('../src/config/config').logger;
-const dbconfig = require('../src/config/config').dbconfig;
-
-const pool = mysql.createPool(dbconfig);
-
-pool.on('connection', function (connection) {
-    logger.trace('Database connection established')
-})
-
-pool.on('acquire', function (connection) {
-    logger.trace('Database connection aquired')
-})
-
-pool.on('release', function (connection) {
-    logger.trace('Database connection released')
-})
+const jwt = require('jsonwebtoken')
+const pool = require('../src/config/database-config');
 
 const CLEAR_STUDENTHOME_TABLE = 'DELETE IGNORE FROM studenthome;';
+const CLEAR_USER_TABLE = 'DELETE IGNORE FROM user;'
+const CLEAR_DB = CLEAR_STUDENTHOME_TABLE + CLEAR_USER_TABLE
+
+const INSERT_USER =
+    'INSERT INTO `user` (`ID`, `First_Name`, `Last_Name`, `Email`, `Student_Number`, `Password` ) VALUES' +
+    '(1, "first", "last", "name@server.nl","1234567", "secret");'
 
 const INSERT_STUDENTHOMES =
     "INSERT INTO `studenthome` (`Name`, `Address`, `House_Nr`, `UserID`, `Postal_Code`, `Telephone`, `City`) VALUES" +
     "('Princenhage', 'Princenhage', 11, 1,'4706RX','061234567891','Breda')," +
-    "('Haagdijk 23', 'Haagdijk', 4, 4, '4706RX','061234567891','Breda')," +
-    "('Den Hout', 'Lovensdijkstraat', 61, 3, '4706RX','061234567891','Den Hout')," +
-    "('Den Dijk', 'Langendijk', 63, 4, '4706RX','061234567891','Breda')," +
-    "('Lovensdijk', 'Lovensdijkstraat', 62, 2, '4706RX','061234567891','Breda')," +
-    "('Van Schravensteijn', 'Schravensteijnseweg', 23, 3, '4706RX','061234567891','Breda');";
+    "('Haagdijk 23', 'Haagdijk', 4, 1, '4706RX','061234567891','Breda')," +
+    "('Den Hout', 'Lovensdijkstraat', 61, 1, '4706RX','061234567891','Den Hout')," +
+    "('Den Dijk', 'Langendijk', 63, 1, '4706RX','061234567891','Breda')," +
+    "('Lovensdijk', 'Lovensdijkstraat', 62, 1, '4706RX','061234567891','Breda')," +
+    "('Van Schravensteijn', 'Schravensteijnseweg', 23, 1, '4706RX','061234567891','Breda');";
 
 beforeEach((done) => {
-    pool.query(CLEAR_STUDENTHOME_TABLE, (err, rows, fields) => {
+    pool.query(CLEAR_DB, (err, rows, fields) => {
         if (err) {
             logger.error(`before CLEARING tables: ${err}`)
             done(err)
         } else {
-            logger.info('before FINISHED')
-            done()
+            pool.query(INSERT_USER, (err, rows, fields) => {
+                if (err) {
+                    // logger.error(`before INSERTING tables: ${err}`)
+                    done(err)
+                } else {
+                    logger.info('before FINISHED')
+                    done()
+                }
+            });
         }
     })
 })
 
 afterEach((done) => {
-    pool.query(CLEAR_STUDENTHOME_TABLE, (err, rows, fields) => {
+    pool.query(CLEAR_DB, (err, rows, fields) => {
         if (err) {
             console.log(`after error: ${err}`)
             done(err)
@@ -69,11 +68,13 @@ describe("Database", function () {
             chai
                 .request(server)
                 .post("/api/studenthome")
+                .set('authorization', 'Bearer ' + jwt.sign({
+                    id: 1
+                }, 'secret'))
                 .send({
                     Name: "Haagdijk 23",
                     Address: "Leenweer",
                     House_Nr: 456,
-                    UserID: 4,
                     Postal_Code: "4703RD",
                     Telephone: "061234567891",
                     City: "Sliedrecht"
@@ -104,11 +105,13 @@ describe("Database", function () {
             chai
                 .request(server)
                 .post("/api/studenthome")
+                .set('authorization', 'Bearer ' + jwt.sign({
+                    id: 1
+                }, 'secret'))
                 .send({
                     //Name: "Haagdijk 24",
                     Address: "Leenweer",
                     House_Nr: 88,
-                    UserID: 4,
                     Postal_Code: "4705RD",
                     Telephone: "061234567891",
                     City: "Sliedrecht"
@@ -142,11 +145,13 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .post("/api/studenthome")
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .send({
                             Name: "Haagdijk 23",
                             Address: "Haagdijk",
                             House_Nr: 4,
-                            UserID: 4,
                             Postal_Code: "4706RX",
                             Telephone: "061234567891",
                             City: "Breda"
@@ -335,6 +340,9 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .put("/api/studenthome/" + result.insertId)
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .send({
                             Name: "Haagdijk 33",
                             Address: "Leenweer",
@@ -373,6 +381,9 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .put("/api/studenthome/" + result.insertId)
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .send({
                             name: "Studenthuis1"
                         })
@@ -407,6 +418,9 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .put("/api/studenthome/" + result.insertId + 10)
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .send({
                             Name: "Studenthuis1"
                         })
@@ -441,6 +455,9 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .delete("/api/studenthome/" + result.insertId)
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .end((err, res) => {
                             assert.ifError(err);
                             res.should.have.status(200);
@@ -472,6 +489,9 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .delete("/api/studenthome/" + result.insertId + 10)
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .end((err, res) => {
                             assert.ifError(err);
                             res.should.have.status(404);

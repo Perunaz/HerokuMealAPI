@@ -1,25 +1,10 @@
 const validators = require("../validators");
-const mysql = require('mysql');
 const logger = require('../config/config').logger;
-const dbconfig = require('../config/config').dbconfig;
-
-const pool = mysql.createPool(dbconfig);
-
-pool.on('connection', function (connection) {
-  logger.trace('Database connection established')
-})
-
-pool.on('acquire', function (connection) {
-  logger.trace('Database connection aquired')
-})
-
-pool.on('release', function (connection) {
-  logger.trace('Database connection released')
-})
+const pool = require('../config/database-config');
 
 let database = {
 
-  add(home, next) {
+  add(home, userId, next) {
     logger.trace("add called");
 
     validators.validateHome(home, (err, result) => {
@@ -33,7 +18,7 @@ let database = {
           }
 
           // Use the connection
-          connection.query("INSERT INTO studenthome (Name, Address, House_Nr, UserID, Postal_Code, Telephone, City) VALUES (\"" + home.Name + "\", \"" + home.Address + "\", " + home.House_Nr + ", " + home.UserID + ", \"" + home.Postal_Code + "\", " + home.Telephone + ", \"" + home.City + "\")", (error, results, fields) => {
+          connection.query("INSERT INTO studenthome (Name, Address, House_Nr, UserID, Postal_Code, Telephone, City) VALUES (\"" + home.Name + "\", \"" + home.Address + "\", " + home.House_Nr + ", " + userId + ", \"" + home.Postal_Code + "\", " + home.Telephone + ", \"" + home.City + "\")", (error, results, fields) => {
             // When done with the connection, release it.
             connection.release();
             // Handle error after the release.
@@ -51,10 +36,10 @@ let database = {
     });
   },
 
-  addMeal(meal, index, next) {
+  addMeal(meal, homeId, userId, next) {
     logger.trace("addMeal called");
 
-    validators.validateMeal(meal, index, (err, result) => {
+    validators.validateMeal(meal, homeId, (err, result) => {
       if (err) {
         next(err);
         return;
@@ -66,7 +51,7 @@ let database = {
           }
 
           // Use the connection
-          connection.query("INSERT INTO meal (Name, Description, Ingredients, Allergies, CreatedOn, OfferedOn, Price, UserID, StudenthomeID, MaxParticipants) VALUES (\"" + meal.Name + "\", \"" + meal.Description + "\", \"" + meal.Ingredients + "\", \"" + meal.Allergies + "\", \"" + new Date() + "\", \"" + meal.OfferedOn + "\", " + meal.Price + ", " + 4 + ", " + index + ", " + meal.MaxParticipants + ")", (error, results, fields) => {
+          connection.query("INSERT INTO meal (Name, Description, Ingredients, Allergies, CreatedOn, OfferedOn, Price, UserID, StudenthomeID, MaxParticipants) VALUES (\"" + meal.Name + "\", \"" + meal.Description + "\", \"" + meal.Ingredients + "\", \"" + meal.Allergies + "\", \"" + new Date() + "\", \"" + meal.OfferedOn + "\", " + meal.Price + ", " + userId + ", " + homeId + ", " + meal.MaxParticipants + ")", (error, results, fields) => {
             // When done with the connection, release it.
             connection.release();
             // Handle error after the release.

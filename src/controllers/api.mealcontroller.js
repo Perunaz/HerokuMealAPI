@@ -4,9 +4,10 @@ let logger = require('tracer').console();
 exports.addMeal = function (req, res, next) {
   logger.log("addMeal called");
   const meal = req.body;
-  const index = req.params.homeId;
+  const homeId = req.params.homeId;
+  const userId = req.userId;
 
-  database.addMeal(meal, index, (err, result) => {
+  database.addMeal(meal, homeId, userId, (err, result) => {
     if (err) {
       next(err);
     }

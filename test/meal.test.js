@@ -8,53 +8,49 @@ chai.use(chaiHttp);
 
 const assert = require("assert");
 const server = require("../index.js");
-const mysql = require('mysql');
 const logger = require('../src/config/config').logger;
-const dbconfig = require('../src/config/config').dbconfig;
+const jwt = require('jsonwebtoken')
+const pool = require('../src/config/database-config');
 
-const pool = mysql.createPool(dbconfig);
+const CLEAR_STUDENTHOME_TABLE = 'DELETE IGNORE FROM studenthome;';
+const CLEAR_USER_TABLE = 'DELETE IGNORE FROM user;'
+const CLEAR_MEAL_TABLE = 'DELETE IGNORE FROM meal;'
+const CLEAR_DB = CLEAR_MEAL_TABLE + CLEAR_STUDENTHOME_TABLE + CLEAR_USER_TABLE;
 
-pool.on('connection', function (connection) {
-    logger.trace('Database connection established')
-})
-
-pool.on('acquire', function (connection) {
-    logger.trace('Database connection aquired')
-})
-
-pool.on('release', function (connection) {
-    logger.trace('Database connection released')
-})
-
-const CLEAR_STUDENTHOME_TABLE = 'DELETE IGNORE FROM studenthome;'
+const INSERT_USER =
+    'INSERT INTO `user` (`ID`, `First_Name`, `Last_Name`, `Email`, `Student_Number`, `Password` ) VALUES' +
+    '(1, "first", "last", "name@server.nl","1234567", "secret");'
 
 const INSERT_STUDENTHOMES =
     "INSERT INTO `studenthome` (`Name`, `Address`, `House_Nr`, `UserID`, `Postal_Code`, `Telephone`, `City`) VALUES" +
     "('Princenhage', 'Princenhage', 11, 1,'4706RX','061234567891','Breda')," +
-    "('Haagdijk 23', 'Haagdijk', 4, 4, '4706RX','061234567891','Breda')," +
-    "('Den Hout', 'Lovensdijkstraat', 61, 3, '4706RX','061234567891','Den Hout')," +
-    "('Den Dijk', 'Langendijk', 63, 4, '4706RX','061234567891','Breda')," +
-    "('Lovensdijk', 'Lovensdijkstraat', 62, 2, '4706RX','061234567891','Breda')," +
-    "('Van Schravensteijn', 'Schravensteijnseweg', 23, 3, '4706RX','061234567891','Breda');"
-
-const INSERT_MEAlS =
-    "INSERT INTO `meal` (`Name`, `Description`, `Ingredients`, `Allergies`, `CreatedOn`, `OfferedOn`, `Price`, `MaxParticipants`, `UserID`, `StudenthomeID`) VALUES" +
-    "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 4, 4, 3)";
+    "('Haagdijk 23', 'Haagdijk', 4, 1, '4706RX','061234567891','Breda')," +
+    "('Den Hout', 'Lovensdijkstraat', 61, 1, '4706RX','061234567891','Den Hout')," +
+    "('Den Dijk', 'Langendijk', 63, 1, '4706RX','061234567891','Breda')," +
+    "('Lovensdijk', 'Lovensdijkstraat', 62, 1, '4706RX','061234567891','Breda')," +
+    "('Van Schravensteijn', 'Schravensteijnseweg', 23, 1, '4706RX','061234567891','Breda');"
 
 beforeEach((done) => {
-    pool.query(CLEAR_STUDENTHOME_TABLE, (err, rows, fields) => {
+    pool.query(CLEAR_DB, (err, rows, fields) => {
         if (err) {
             logger.error(`before CLEARING tables: ${err}`)
             done(err)
         } else {
-            logger.info('before FINISHED')
-            done()
+            pool.query(INSERT_USER, (err, rows, fields) => {
+                if (err) {
+                    // logger.error(`before INSERTING tables: ${err}`)
+                    done(err)
+                } else {
+                    logger.info('before FINISHED')
+                    done()
+                }
+            });
         }
     })
 })
 
 afterEach((done) => {
-    pool.query(CLEAR_STUDENTHOME_TABLE, (err, rows, fields) => {
+    pool.query(CLEAR_DB, (err, rows, fields) => {
         if (err) {
             console.log(`after error: ${err}`)
             done(err)
@@ -75,6 +71,9 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .post("/api/studenthome/" + result.insertId + "/meal")
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .send({
                             Name: "Lasagne",
                             Description: "Some sort of oven dish with pasta, cheese, minced meat and tomato",
@@ -82,7 +81,7 @@ describe("Database", function () {
                             Allergies: "Lactose",
                             OfferedOn: "2020-01-01 10:10",
                             Price: 8.00,
-                            MaxParticipants: 6
+                            MaxParticipants: 6,
                         })
                         .end((err, res) => {
                             assert.ifError(err);
@@ -116,6 +115,9 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .post("/api/studenthome/3/meal")
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .send({
                             //Name: "Lasagne",
                             Description: "Some sort of oven dish with pasta, cheese, minced meat and tomato",
@@ -154,12 +156,15 @@ describe("Database", function () {
                 if (error) logger.debug(error)
                 if (result1) {
                     pool.query("INSERT INTO `meal` (`Name`, `Description`, `Ingredients`, `Allergies`, `CreatedOn`, `OfferedOn`, `Price`, `MaxParticipants`, `UserID`, `StudenthomeID`) VALUES" +
-                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 4, 4, " + result1.insertId + ")", (error, result2) => {
+                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 1, 1, " + result1.insertId + ")", (error, result2) => {
                             if (error) logger.debug(error)
                             if (result2) {
                                 chai
                                     .request(server)
                                     .put("/api/studenthome/" + result1.insertId + "/meal/" + result2.insertId)
+                                    .set('authorization', 'Bearer ' + jwt.sign({
+                                        id: 1
+                                    }, 'secret'))
                                     .send({
                                         Name: "Salade",
                                         Description: "Pasta, cheese, minced meat and tomato",
@@ -191,12 +196,15 @@ describe("Database", function () {
                 if (error) logger.debug(error)
                 if (result1) {
                     pool.query("INSERT INTO `meal` (`Name`, `Description`, `Ingredients`, `Allergies`, `CreatedOn`, `OfferedOn`, `Price`, `MaxParticipants`, `UserID`, `StudenthomeID`) VALUES" +
-                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 4, 4, " + result1.insertId + ")", (error, result2) => {
+                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 1, 1, " + result1.insertId + ")", (error, result2) => {
                             if (error) logger.debug(error)
                             if (result2) {
                                 chai
                                     .request(server)
                                     .put("/api/studenthome/" + result1.insertId + "/meal/" + result2.insertId)
+                                    .set('authorization', 'Bearer ' + jwt.sign({
+                                        id: 1
+                                    }, 'secret'))
                                     .send({
                                         name: "Lasagne"
                                     })
@@ -224,6 +232,9 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .put("/api/studenthome/" + result.insertId + "/meal/99")
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .send({
                             Name: "Lasagne",
                             Description: "Some sort of oven dish with pasta, cheese, minced meat and tomato",
@@ -263,31 +274,31 @@ describe("Database", function () {
                 if (error) logger.debug(error)
                 if (result1) {
                     pool.query("INSERT INTO `meal` (`Name`, `Description`, `Ingredients`, `Allergies`, `CreatedOn`, `OfferedOn`, `Price`, `MaxParticipants`, `UserID`, `StudenthomeID`) VALUES" +
-                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 4, 4, " + result1.insertId + ")", (error, result2) => {
+                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 1, 1, " + result1.insertId + ")", (error, result2) => {
                             if (error) logger.debug(error)
                             if (result2) {
-                    chai
-                        .request(server)
-                        .get("/api/studenthome/" + result1.insertId + "/meal/")
-                        .end((err, res) => {
-                            assert.ifError(err);
-                            res.should.have.status(200);
-                            res.should.be.an("object");
+                                chai
+                                    .request(server)
+                                    .get("/api/studenthome/" + result1.insertId + "/meal/")
+                                    .end((err, res) => {
+                                        assert.ifError(err);
+                                        res.should.have.status(200);
+                                        res.should.be.an("object");
 
-                            res.body.should.be.an("object").that.has.all.keys("status", "result");
+                                        res.body.should.be.an("object").that.has.all.keys("status", "result");
 
-                            let {
-                                status,
-                                result
-                            } = res.body;
+                                        let {
+                                            status,
+                                            result
+                                        } = res.body;
 
-                            status.should.be.an("string");
-                            result.should.be.a("array");
+                                        status.should.be.an("string");
+                                        result.should.be.a("array");
 
-                            done();
-                        })
-                    }
-                });
+                                        done();
+                                    })
+                            }
+                        });
                 }
             });
         });
@@ -301,31 +312,31 @@ describe("Database", function () {
                 if (error) logger.debug(error)
                 if (result1) {
                     pool.query("INSERT INTO `meal` (`Name`, `Description`, `Ingredients`, `Allergies`, `CreatedOn`, `OfferedOn`, `Price`, `MaxParticipants`, `UserID`, `StudenthomeID`) VALUES" +
-                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 4, 4, " + result1.insertId + ")", (error, result2) => {
+                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 1, 1, " + result1.insertId + ")", (error, result2) => {
                             if (error) logger.debug(error)
                             if (result2) {
-                    chai
-                        .request(server)
-                        .get("/api/studenthome/" + result1.insertId + "/meal/" + result2.insertId)
-                        .end((err, res) => {
-                            assert.ifError(err);
-                            res.should.have.status(200);
-                            res.should.be.an("object");
+                                chai
+                                    .request(server)
+                                    .get("/api/studenthome/" + result1.insertId + "/meal/" + result2.insertId)
+                                    .end((err, res) => {
+                                        assert.ifError(err);
+                                        res.should.have.status(200);
+                                        res.should.be.an("object");
 
-                            res.body.should.be.an("object").that.has.all.keys("status", "result");
+                                        res.body.should.be.an("object").that.has.all.keys("status", "result");
 
-                            let {
-                                status,
-                                result
-                            } = res.body;
+                                        let {
+                                            status,
+                                            result
+                                        } = res.body;
 
-                            status.should.be.an("string");
-                            result.should.be.a("array");
+                                        status.should.be.an("string");
+                                        result.should.be.a("array");
 
-                            done();
-                        })
-                    }
-                });
+                                        done();
+                                    })
+                            }
+                        });
                 }
             });
         });
@@ -371,29 +382,32 @@ describe("Database", function () {
                 if (error) logger.debug(error)
                 if (result1) {
                     pool.query("INSERT INTO `meal` (`Name`, `Description`, `Ingredients`, `Allergies`, `CreatedOn`, `OfferedOn`, `Price`, `MaxParticipants`, `UserID`, `StudenthomeID`) VALUES" +
-                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 4, 4, " + result1.insertId + ")", (error, result2) => {
+                        "('Zuurkool met worst', 'Zuurkool a la Montizaan, specialiteit van het huis.', 'Zuurkool, worst, spekjes', 'Lactose, gluten','2020-01-01 10:10','2020-01-01 10:10', 5.50, 1, 1, " + result1.insertId + ")", (error, result2) => {
                             if (error) logger.debug(error)
                             if (result2) {
-                    chai
-                        .request(server)
-                        .get("/api/studenthome/" + result1.insertId + "/meal/" + result2.insertId)
-                        .end((err, res) => {
-                            assert.ifError(err);
-                            res.should.have.status(200);
-                            res.should.be.an("object");
+                                chai
+                                    .request(server)
+                                    .get("/api/studenthome/" + result1.insertId + "/meal/" + result2.insertId)
+                                    .set('authorization', 'Bearer ' + jwt.sign({
+                                        id: 1
+                                    }, 'secret'))
+                                    .end((err, res) => {
+                                        assert.ifError(err);
+                                        res.should.have.status(200);
+                                        res.should.be.an("object");
 
-                            res.body.should.be.an("object").that.has.all.keys("result", "status");
+                                        res.body.should.be.an("object").that.has.all.keys("result", "status");
 
-                            let {
-                                result
-                            } = res.body;
+                                        let {
+                                            result
+                                        } = res.body;
 
-                            result.should.be.a("array");
+                                        result.should.be.a("array");
 
-                            done();
-                        })
-                    }
-                });
+                                        done();
+                                    })
+                            }
+                        });
                 }
             });
         });
@@ -409,6 +423,9 @@ describe("Database", function () {
                     chai
                         .request(server)
                         .delete("/api/studenthome/3/meal/1")
+                        .set('authorization', 'Bearer ' + jwt.sign({
+                            id: 1
+                        }, 'secret'))
                         .end((err, res) => {
                             assert.ifError(err);
                             res.should.have.status(404);

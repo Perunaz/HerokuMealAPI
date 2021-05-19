@@ -18,7 +18,7 @@ pool.on('release', function (connection) {
 
 let validators = {
   validateMeal(meal, index, next) {
-    logger.log("validateMeal called!");
+    logger.trace("validateMeal called!");
     if (meal) {
       let name = meal["Name"];
 
@@ -50,7 +50,8 @@ let validators = {
   },
 
   validateHome(home, next) {
-    logger.log("validateHome called!");
+    logger.trace("validateHome called!");
+    logger.trace(home)
     if (home) {
       let postalCode = home["Postal_Code"];
       let phoneNumber = home["Telephone"];
@@ -97,14 +98,14 @@ let validators = {
   },
 
   validatePostalCode(value) {
-    logger.log("validatePostalCode called!");
+    logger.trace("validatePostalCode called!");
     return /^[1-9][0-9]{3}[ ]?([A-RT-Za-rt-z][A-Za-z]|[sS][BCbcE-Re-rT-Zt-z])$/.test(
       value
     );
   },
 
   validatePhoneNumber(value) {
-    logger.log("validatePhoneNumber called!");
+    logger.trace("validatePhoneNumber called!");
     return /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im.test(
       value
     );

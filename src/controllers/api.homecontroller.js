@@ -1,8 +1,8 @@
 const database = require("../dao/database");
-let logger = require('tracer').console();
+const logger = require('../config/config').logger;
 
 exports.getById = function (req, res, next) {
-  logger.log("getById called");
+  logger.trace("getById called");
   const homeId = req.params.homeId;
 
   database.getById(homeId, (err, result) => {
@@ -39,10 +39,11 @@ exports.updateStudentHome = function(req, res, next) {
 }
 
 exports.addStudentHome = function (req, res, next) {
-  logger.log("AddStudentHome called");
+  logger.trace("AddStudentHome called");
   const home = req.body;
+  const userId = req.userId;
 
-  database.add(home, (err, result) => {
+  database.add(home, userId, (err, result) => {
     if (err) {
       next(err);
     }
@@ -56,7 +57,7 @@ exports.addStudentHome = function (req, res, next) {
 };
 
 exports.getStudentHomesByNameAndCity = function (req, res, next) {
-  logger.log("getStudentHomesByNameAndCity called");
+  logger.trace("getStudentHomesByNameAndCity called");
   const {
     name
   } = req.query;
@@ -76,7 +77,7 @@ exports.getStudentHomesByNameAndCity = function (req, res, next) {
 };
 
 exports.deleteStudentHome = function(req, res, next) {
-  logger.log("deleteStudentHome called");
+  logger.trace("deleteStudentHome called");
   const homeId = req.params.homeId;
 
   database.deleteHome(homeId, (err, result) => {

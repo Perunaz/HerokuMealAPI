@@ -10,6 +10,8 @@ module.exports = {
     connectionLimit: 10
   },
 
+  jwtSecretKey: process.env.SECRET || 'secret',
+
   logger: require('tracer').console({
     format: ['{{timestamp}} [{{title}}] {{file}}:{{line}} : {{message}}'],
     preprocess: function (data) {

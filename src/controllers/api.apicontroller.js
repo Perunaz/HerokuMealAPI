@@ -1,6 +1,5 @@
 const importData1 = require("../json/data1.json");
 const importData2 = require("../json/data2.json");
-const apiRoutes = require("../routes/api.apiroutes");
 let logger = require('tracer').console();
 
 exports.getLoggingHandler = function (req, res, next) {

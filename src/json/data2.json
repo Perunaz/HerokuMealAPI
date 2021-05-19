@@ -1,8 +1,8 @@
 {
-   "info":{
-                    "student_name": "Caelan van Eijnsbergen",
-                    "student_number": "2153459",
-                    "description": "This API was made in a project for school"
+    "info": {
+        "student_name": "Caelan van Eijnsbergen",
+        "student_number": "2153459",
+        "description": "This API was made in a project for school"
 
     }
 }
