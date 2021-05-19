@@ -78,7 +78,7 @@ module.exports = {
       next()
     } catch (ex) {
       res
-        .status(422)
+        .status(400)
         .json({ error: ex.toString(), datetime: new Date().toISOString() })
     }
   },
@@ -105,7 +105,7 @@ module.exports = {
 
         connection.query(
           'INSERT INTO `user` (`First_Name`, `Last_Name`, `Email`, `Student_Number`, `Password`) VALUES (?, ?, ?, ?, ?)',
-          [firstname, lastname, email, 12345, password],
+          [firstname, lastname, email, studentnr, password],
           (err, rows, fields) => {
             connection.release()
             if (err) {
@@ -162,7 +162,7 @@ module.exports = {
     } catch (ex) {
       logger.debug('validateRegister error: ', ex.toString())
       res
-        .status(422)
+        .status(400)
         .json({ message: ex.toString(), datetime: new Date().toISOString() })
     }
   },
